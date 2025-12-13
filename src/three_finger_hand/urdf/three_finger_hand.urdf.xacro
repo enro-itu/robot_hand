@@ -8,12 +8,12 @@
   <joint name="fixed_base" type="fixed">
     <parent link="world"/>
     <child link="palm"/>
-    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
 
   <link name="palm">
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0.523"/>
       <geometry>
         <mesh filename="package://three_finger_hand/meshes/palm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -34,15 +34,15 @@
   </link>
 
   <xacro:finger prefix="finger_1" parent="palm">
-    <origin xyz="0.05 0 0.02" rpy="0 0 0"/>
+    <origin xyz="0.05 0 0.08" rpy="0 0.52333333 0"/><!-- <origin xyz="0.06785 -0.002 0.08" rpy="0 0.52333333 0"/> -->
   </xacro:finger>
 
   <xacro:finger prefix="finger_2" parent="palm">
-    <origin xyz="-0.025 0.043 0.02" rpy="0 0 2.0944"/>
+    <origin xyz="-0.025 0.043 0.08" rpy="0 0.52333333 2.0944"/>
   </xacro:finger>
 
   <xacro:finger prefix="finger_3" parent="palm">
-    <origin xyz="-0.025 -0.043 0.02" rpy="0 0 -2.0944"/>
+    <origin xyz="-0.025 -0.043 0.08" rpy="0 0.52333333 -2.0944"/>
   </xacro:finger>
 
 </robot>
