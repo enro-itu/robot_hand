@@ -34,15 +34,15 @@
   </link>
 
   <xacro:finger prefix="finger_1" parent="palm">
-    <origin xyz="0.05 0 0.08" rpy="0 0.52333333 0"/><!-- <origin xyz="0.06785 -0.002 0.08" rpy="0 0.52333333 0"/> -->
+    <origin xyz="0.05785 0 0.06375" rpy="0 0.52333333 0"/>
   </xacro:finger>
 
   <xacro:finger prefix="finger_2" parent="palm">
-    <origin xyz="-0.025 0.043 0.08" rpy="0 0.52333333 2.0944"/>
+    <origin xyz="-0.02893 0.05001 0.06375" rpy="0 0.52333333 2.0944"/>
   </xacro:finger>
 
   <xacro:finger prefix="finger_3" parent="palm">
-    <origin xyz="-0.025 -0.043 0.08" rpy="0 0.52333333 -2.0944"/>
+    <origin xyz="-0.02893 -0.05001 0.06375" rpy="0 0.52333333 -2.0944"/>
   </xacro:finger>
 
 </robot>
