@@ -14,7 +14,7 @@ def generate_launch_description():
         'urdf',
         'three_finger_hand.urdf.xacro'
     )
-    # default_rviz_config_path = os.path.join(pkg_share, 'rviz', 'urdf.rviz')
+    default_rviz_config_path = os.path.join(pkg_share, 'rviz', 'config.rviz')
 
     robot_description = Command(['xacro ', LaunchConfiguration('model')])
 
@@ -34,8 +34,8 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         name='rviz2',
-        output='screen'
-        # arguments=['-d', default_rviz_config_path]
+        output='screen',
+        arguments=['-d', default_rviz_config_path]
     )
 
     return LaunchDescription([
