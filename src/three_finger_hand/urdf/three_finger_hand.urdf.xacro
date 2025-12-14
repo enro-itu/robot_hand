@@ -45,4 +45,81 @@
     <origin xyz="-0.02893 -0.05001 0.06375" rpy="0 0.52333333 -2.0944"/>
   </xacro:finger>
 
+  <gazebo>
+    <plugin filename="libgz_ros2_control-system.so" 
+            name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find three_finger_hand)/config/hand_controller.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+
+    <joint name="finger_1_joint_1">
+      <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_1_joint_2">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_1_joint_3">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_1_joint_4">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="finger_2_joint_1">
+      <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_2_joint_2">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_2_joint_3">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_2_joint_4">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="finger_3_joint_1">
+      <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_3_joint_2">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_3_joint_3">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="finger_3_joint_4">
+      <command_interface name="position"><param name="min">0.0</param><param name="max">1.57</param></command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+  </ros2_control>
+
 </robot>

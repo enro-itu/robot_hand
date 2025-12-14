@@ -1,0 +1,25 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    forward_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+forward_position_controller:
+  ros__parameters:
+    joints:
+      - finger_1_joint_1
+      - finger_1_joint_2
+      - finger_1_joint_3
+      - finger_1_joint_4
+      - finger_2_joint_1
+      - finger_2_joint_2
+      - finger_2_joint_3
+      - finger_2_joint_4
+      - finger_3_joint_1
+      - finger_3_joint_2
+      - finger_3_joint_3
+      - finger_3_joint_4
