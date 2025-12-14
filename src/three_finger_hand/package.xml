@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>3-Finger Dexterous Hand Description Package</description>
   <maintainer email="dikkulah@null.net">ErenDikkulah</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
@@ -15,6 +15,11 @@
   <depend>robot_state_publisher</depend>
   <depend>joint_state_publisher_gui</depend>
   <depend>rviz2</depend>
+  <depend>ros_gz_sim</depend>
+  <depend>ros_gz_bridge</depend>
+  <depend>gz_ros2_control</depend>
+  <depend>ros2_control</depend>
+  <depend>ros2_controllers</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
