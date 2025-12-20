@@ -58,7 +58,10 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],  # [ yenine @ olması gerekebilir, çift taraflı köprü için
+        arguments=[
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            # '/forward_position_controller/commands@std_msgs/msg/Float64MultiArray]gz.msgs.FloatV',
+        ],
         output='screen'
     )
 
