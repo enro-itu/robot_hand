@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
+from geometry_msgs.msg import Point
 import tkinter as tk
 from tkinter import ttk
 import random
@@ -22,11 +23,17 @@ class HandControlGUI(Node):
             10
         )
 
+        self.ik_pubs = {
+            'Finger 1': self.create_publisher(Point, '/finger_1/goal_pose', 10),
+            'Finger 2': self.create_publisher(Point, '/finger_2/goal_pose', 10),
+            'Finger 3': self.create_publisher(Point, '/finger_3/goal_pose', 10)
+        }
+
         self.joint_positions = [0.0] * 12
 
         self.root = tk.Tk()
         self.root.title("Control Panel")
-        self.root.geometry("400x900")
+        self.root.geometry("400x950")
 
         self.sliders = []
         for i, joint_name in enumerate(JOINT_ORDER):
@@ -44,23 +51,60 @@ class HandControlGUI(Node):
             slider.pack(side='right')
             self.sliders.append(slider)
 
-        btn_reset = tk.Button(self.root, text="Reset", command=self.reset_all, bg="red", fg="white")
-        btn_reset.pack(pady=8)
+        btn_frame_1 = tk.Frame(self.root)
+        btn_frame_1.pack(pady=10)
 
-        btn_random = tk.Button(self.root, text="Random", command=self.random_positions, bg="blue", fg="white")
-        btn_random.pack(pady=8)
+        btn_reset = tk.Button(btn_frame_1, text="Reset", command=self.reset_all, bg="red", fg="white")
+        btn_reset.pack(padx=5, side="left", pady=2)
 
-        btn_close_hand = tk.Button(self.root, text="Close hand", command=self.close_fingers, bg="green", fg="white")
-        btn_close_hand.pack(pady=8)
+        btn_random = tk.Button(btn_frame_1, text="Random", command=self.random_positions, bg="blue", fg="white")
+        btn_random.pack(padx=5, side="left", pady=2)
 
-        btn_two_finger_pinch = tk.Button(self.root, text="Two finger pinch", command=self.two_finger_pinch, bg="purple", fg="white")
-        btn_two_finger_pinch.pack(pady=8)
+        btn_close_hand = tk.Button(btn_frame_1, text="Close hand", command=self.close_fingers, bg="green", fg="white")
+        btn_close_hand.pack(padx=5, side="left", pady=2)
 
-        btn_three_finger_pinch = tk.Button(self.root, text="Three finger pinch", command=self.three_finger_pinch, bg="orange", fg="white")
-        btn_three_finger_pinch.pack(pady=8)
+        btn_frame_2 = tk.Frame(self.root)
+        btn_frame_2.pack(pady=10)
+
+        btn_two_finger_pinch = tk.Button(btn_frame_2, text="Two finger pinch", command=self.two_finger_pinch, bg="purple", fg="white")
+        btn_two_finger_pinch.pack(padx=5, side="left", pady=2)
+
+        btn_three_finger_pinch = tk.Button(btn_frame_2, text="Three finger pinch", command=self.three_finger_pinch, bg="orange", fg="white")
+        btn_three_finger_pinch.pack(padx=5, side="left", pady=2)
+
+        # IK panel
+        tk.Label(self.root, text="--- Inverse Kinematics (Task 4) ---", font=('Arial', 10, 'bold')).pack(pady=10)
+        ik_frame = tk.Frame(self.root, bd=1, relief="solid", padx=10, pady=10)
+        ik_frame.pack(pady=5, padx=20, fill="x")
+
+        self.selected_finger = tk.StringVar(value="Finger 1")
+        finger_sel = ttk.OptionMenu(ik_frame, self.selected_finger, "Finger 1", "Finger 1", "Finger 2", "Finger 3")
+        finger_sel.pack(pady=2)
+
+        tk.Label(ik_frame, text="X:").pack(side="left")
+        self.ent_x = tk.Entry(ik_frame, width=5); self.ent_x.insert(0, "0.05"); self.ent_x.pack(side="left", padx=2)
+        tk.Label(ik_frame, text="Y:").pack(side="left")
+        self.ent_y = tk.Entry(ik_frame, width=5); self.ent_y.insert(0, "0.0"); self.ent_y.pack(side="left", padx=2)
+        tk.Label(ik_frame, text="Z:").pack(side="left")
+        self.ent_z = tk.Entry(ik_frame, width=5); self.ent_z.insert(0, "0.1"); self.ent_z.pack(side="left", padx=2)
+
+        btn_solve_ik = tk.Button(self.root, text="Solve IK & Move", command=self.send_ik_goal, bg="black", fg="white")
+        btn_solve_ik.pack(pady=5)
+        # -----------------------------------------------
 
         self.root.after(10, self.loop_ros)
         self.root.mainloop()
+
+    def send_ik_goal(self):
+        try:
+            msg = Point()
+            msg.x = float(self.ent_x.get())
+            msg.y = float(self.ent_y.get())
+            msg.z = float(self.ent_z.get())
+            finger = self.selected_finger.get()
+            self.ik_pubs[finger].publish(msg)
+        except ValueError:
+            print("Invalid XYZ input")
 
     def update_joint(self, index, value):
         self.joint_positions[index] = float(value)
@@ -112,48 +156,22 @@ class HandControlGUI(Node):
 
 class JointLimits(Exception):
     JOINT_LIMITS = {
-        'finger_1_joint_1': (-1.24, 1.24),
-        'finger_1_joint_2': (-0.61, 1.24),
-        'finger_1_joint_3': (-1.24, 1.24),
-        'finger_1_joint_4': (-1.5, 1.5),
-        'finger_2_joint_1': (-1.24, 1.24),
-        'finger_2_joint_2': (-0.61, 1.24),
-        'finger_2_joint_3': (-1.24, 1.24),
-        'finger_2_joint_4': (-1.5, 1.5),
-        'finger_3_joint_1': (-1.24, 1.24),
-        'finger_3_joint_2': (-0.61, 1.24),
-        'finger_3_joint_3': (-1.24, 1.24),
-        'finger_3_joint_4': (-1.5, 1.5)
+        'finger_1_joint_1': (-1.24, 1.24), 'finger_1_joint_2': (-0.61, 1.24),
+        'finger_1_joint_3': (-1.24, 1.24), 'finger_1_joint_4': (-1.5, 1.5),
+        'finger_2_joint_1': (-1.24, 1.24), 'finger_2_joint_2': (-0.61, 1.24),
+        'finger_2_joint_3': (-1.24, 1.24), 'finger_2_joint_4': (-1.5, 1.5),
+        'finger_3_joint_1': (-1.24, 1.24), 'finger_3_joint_2': (-0.61, 1.24),
+        'finger_3_joint_3': (-1.24, 1.24), 'finger_3_joint_4': (-1.5, 1.5)
     }
-
     JOINT_POSITIONS_FOR_2_FINGER_PINCH = {
-        'finger_1_joint_1': 0.0,
-        'finger_1_joint_2': -0.3,
-        'finger_1_joint_3': -0.75,
-        'finger_1_joint_4': -0.75,
-        'finger_2_joint_1': 0.0,
-        'finger_2_joint_2': -0.3,
-        'finger_2_joint_3': -0.75,
-        'finger_2_joint_4': -0.75,
-        'finger_3_joint_1': 0.0,
-        'finger_3_joint_2': -0.61,
-        'finger_3_joint_3': -1.24,
-        'finger_3_joint_4': -1.5
+        'finger_1_joint_1': 0.0, 'finger_1_joint_2': -0.3, 'finger_1_joint_3': -0.75, 'finger_1_joint_4': -0.75,
+        'finger_2_joint_1': 0.0, 'finger_2_joint_2': -0.3, 'finger_2_joint_3': -0.75, 'finger_2_joint_4': -0.75,
+        'finger_3_joint_1': 0.0, 'finger_3_joint_2': -0.61, 'finger_3_joint_3': -1.24, 'finger_3_joint_4': -1.5
     }
-
     JOINT_POSITIONS_FOR_3_FINGER_PINCH = {
-        'finger_1_joint_1': 0.0,
-        'finger_1_joint_2': -0.3,
-        'finger_1_joint_3': -0.6,
-        'finger_1_joint_4': -0.75,
-        'finger_2_joint_1': 0.0,
-        'finger_2_joint_2': -0.3,
-        'finger_2_joint_3': -0.6,
-        'finger_2_joint_4': -0.75,
-        'finger_3_joint_1': 0.0,
-        'finger_3_joint_2': -0.3,
-        'finger_3_joint_3': -0.6,
-        'finger_3_joint_4': -0.75
+        'finger_1_joint_1': 0.0, 'finger_1_joint_2': -0.3, 'finger_1_joint_3': -0.6, 'finger_1_joint_4': -0.75,
+        'finger_2_joint_1': 0.0, 'finger_2_joint_2': -0.3, 'finger_2_joint_3': -0.6, 'finger_2_joint_4': -0.75,
+        'finger_3_joint_1': 0.0, 'finger_3_joint_2': -0.3, 'finger_3_joint_3': -0.6, 'finger_3_joint_4': -0.75
     }
 
 def main():
