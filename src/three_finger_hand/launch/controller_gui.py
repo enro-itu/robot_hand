@@ -33,7 +33,7 @@ class HandControlGUI(Node):
 
         self.root = tk.Tk()
         self.root.title("Control Panel")
-        self.root.geometry("400x950")
+        self.root.geometry("400x900")
 
         self.sliders = []
         for i, joint_name in enumerate(JOINT_ORDER):
@@ -82,11 +82,11 @@ class HandControlGUI(Node):
         finger_sel.pack(pady=2)
 
         tk.Label(ik_frame, text="X:").pack(side="left")
-        self.ent_x = tk.Entry(ik_frame, width=5); self.ent_x.insert(0, "0.05"); self.ent_x.pack(side="left", padx=2)
+        self.ent_x = tk.Entry(ik_frame, width=5); self.ent_x.insert(0, "0.045"); self.ent_x.pack(side="left", padx=2)
         tk.Label(ik_frame, text="Y:").pack(side="left")
-        self.ent_y = tk.Entry(ik_frame, width=5); self.ent_y.insert(0, "0.0"); self.ent_y.pack(side="left", padx=2)
+        self.ent_y = tk.Entry(ik_frame, width=5); self.ent_y.insert(0, "0.015"); self.ent_y.pack(side="left", padx=2)
         tk.Label(ik_frame, text="Z:").pack(side="left")
-        self.ent_z = tk.Entry(ik_frame, width=5); self.ent_z.insert(0, "0.1"); self.ent_z.pack(side="left", padx=2)
+        self.ent_z = tk.Entry(ik_frame, width=5); self.ent_z.insert(0, "0.19"); self.ent_z.pack(side="left", padx=2)
 
         btn_solve_ik = tk.Button(self.root, text="Solve IK & Move", command=self.send_ik_goal, bg="black", fg="white")
         btn_solve_ik.pack(pady=5)
@@ -175,10 +175,17 @@ class JointLimits(Exception):
     }
 
 def main():
-    rclpy.init()
-    gui = HandControlGUI()
-    gui.destroy_node()
-    rclpy.shutdown()
-
+    try:
+        print("Starting Hand Control GUI...")
+        rclpy.init()
+        gui = HandControlGUI()
+        gui.destroy_node()
+        rclpy.shutdown()
+    except KeyboardInterrupt:
+        print("Keyboard Interrupt detected. Shutting down...")
+    finally:
+        if rclpy.ok():
+            rclpy.shutdown()
+        print("--- GUI Closed ---")
 if __name__ == '__main__':
     main()

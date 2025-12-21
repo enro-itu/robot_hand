@@ -80,8 +80,8 @@ def main():
         rclpy.init()
         node = IKSolverNode()
         rclpy.spin(node)
-    except Exception as e:
-        print(f"Run-time error: {e}")
+    except KeyboardInterrupt:
+        print("Keyboard Interrupt detected. Shutting down...")
     finally:
         if rclpy.ok():
             rclpy.shutdown()
