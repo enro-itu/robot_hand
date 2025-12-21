@@ -35,6 +35,8 @@ class IKSolverNode(Node):
             print(f"{name} chain loaded with {len(chain.links)} links.")
 
         self.publisher_ = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
+        # Track latest commanded joint state so IK updates stay in sync with GUI actions like reset
+        self.create_subscription(Float64MultiArray, '/forward_position_controller/commands', self.update_joint_state, 10)
         
         self.create_subscription(Point, '/finger_1/goal_pose', partial(self.calculate_ik_callback, finger_id=1), 10)
         self.create_subscription(Point, '/finger_2/goal_pose', partial(self.calculate_ik_callback, finger_id=2), 10)
@@ -42,6 +44,11 @@ class IKSolverNode(Node):
 
         self.joint_state = [0.0] * 12
         print("IK Solver Node initialized for 3 fingers.")
+
+    def update_joint_state(self, msg):
+        # Keep internal state aligned with last published GUI command
+        if len(msg.data) == 12:
+            self.joint_state = list(msg.data)
 
     def calculate_ik_callback(self, msg, finger_id):
         finger_name = f'finger_{finger_id}'
