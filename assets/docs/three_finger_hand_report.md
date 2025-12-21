@@ -6,21 +6,59 @@ This project contains a 3-finger robot, its UI, simulation and design. This robo
 
 ## Usage
 
-After cloning project, and being sure installing required programs, go to the project directory and open 3 terminals. Then, run the code below.
+**Note**: Before starting, please keep in mind that the commands below is valid for bash. If you use Powershell or another shell except bash, check commands before running.
+
+### Preliminary
+
+After cloning project, firstly you should install required libraries and run some scripts to automatically generate required files. Here are how to do.
 
 ```bash
-# Terminal 1 (To view in RViz, optional)
-colcon build # 1-time-required, additionally required after editing
-source install/setup.bash
-ros2 launch three_finger_hand display.launch.py # Opens config.rviz automatically
+# In the project directory
+colcon build
+cd src/three_finger_hand/launch
+python3 -m venv .venv # Choosing ".venv" name is recommended to avoid gitignore problems
+source .venv/bin/activate
+pip install ikpy jinja2 markupsafe mpmath numpy scipy setuptools sympy typeguard yaml
+```
 
-# Terminal 2 (To simulate in Gazebo)
-colcon build # Run if skipped Terminal 1
+### Starting RViz to preview the robot
+
+```bash
+# In the project directory
+source install/setup.bash
+ros2 launch three_finger_hand display.launch.py
+```
+
+### Starting Gazebo simulation
+
+```bash
+# In the project directory
 source install/setup.bash
 ros2 launch three_finger_hand simulation.launch.py
+```
 
-# Terminal 3 (To drive the robot using GUI)
-python3 src/three_finger_hand/launch/controller_gui.py
+### Running IK solver
+
+Be sure running Gazebo Sim before running this.
+
+```bash
+# In the project directory
+source install/setup.bash
+cd src/three_finger_hand/launch
+source .venv/bin/activate
+python3 ik_solver_node.py
+```
+
+### Opening GUI
+
+Be sure running Gazebo Sim and IK solver before running this.
+
+```bash
+# In the project directory
+source install/setup.bash
+cd src/three_finger_hand/launch
+source .venv/bin/activate
+python3 controller_gui.py
 ```
 
 ## Data and media related to the robot
