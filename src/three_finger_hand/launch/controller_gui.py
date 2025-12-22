@@ -7,6 +7,7 @@ from geometry_msgs.msg import Point
 import tkinter as tk
 from tkinter import ttk
 import random
+import math
 
 JOINT_ORDER = [
     'finger_1_joint_1', 'finger_1_joint_2', 'finger_1_joint_3', 'finger_1_joint_4',
@@ -65,16 +66,15 @@ class HandControlGUI(Node):
         btn_close_hand.pack(padx=5, side="left", pady=2)
 
         btn_frame_2 = tk.Frame(self.root)
-        btn_frame_2.pack(pady=10)
+        btn_frame_2.pack(pady=5)
 
         btn_two_finger_pinch = tk.Button(btn_frame_2, text="Two finger pinch", command=self.two_finger_pinch, bg="purple", fg="white")
-        btn_two_finger_pinch.pack(padx=5, side="left", pady=2)
+        btn_two_finger_pinch.pack(padx=5, side="left", pady=1)
 
         btn_three_finger_pinch = tk.Button(btn_frame_2, text="Three finger pinch", command=self.three_finger_pinch, bg="orange", fg="white")
-        btn_three_finger_pinch.pack(padx=5, side="left", pady=2)
+        btn_three_finger_pinch.pack(padx=5, side="left", pady=1)
 
         # IK panel
-        tk.Label(self.root, text="--- Inverse Kinematics (Task 4) ---", font=('Arial', 10, 'bold')).pack(pady=10)
         ik_frame = tk.Frame(self.root, bd=1, relief="solid", padx=10, pady=10)
         ik_frame.pack(pady=5, padx=20, fill="x")
 
@@ -95,6 +95,16 @@ class HandControlGUI(Node):
 
         btn_solve_ik = tk.Button(self.root, text="Solve IK & Move", command=self.send_ik_goal, bg="black", fg="white")
         btn_solve_ik.pack(pady=5)
+
+        # Circle positioning panel
+        circle_frame = tk.Frame(self.root, bd=1, relief="solid", padx=10, pady=10)
+        circle_frame.pack(pady=5, padx=20, fill="x")
+        tk.Label(circle_frame, text="Radius (m):").pack(side="left")
+        self.ent_radius = tk.Entry(circle_frame, width=8)
+        self.ent_radius.insert(0, "0.05")
+        self.ent_radius.pack(side="left", padx=5)
+        btn_circle = tk.Button(circle_frame, text="Position Fingers in Circle", command=self.position_fingers_circle, bg="teal", fg="white")
+        btn_circle.pack(side="left", padx=5)
         # -----------------------------------------------
 
         self.create_subscription(String, '/ik_solver/status', self.on_ik_status, 10)
@@ -126,6 +136,21 @@ class HandControlGUI(Node):
     def on_ik_status(self, msg):
         # Show latest IK status/warning in the IK panel
         self.ik_status.set(msg.data)
+
+    def position_fingers_circle(self):
+        try:
+            radius = float(self.ent_radius.get())
+            z_height = float(self.ent_z.get())
+            # Position 3 fingers equally spaced around a circle
+            for i in range(3):
+                msg = Point()
+                msg.x = radius
+                msg.y = 0.0
+                msg.z = z_height
+                finger_name = f"Finger {i+1}"
+                self.ik_pubs[finger_name].publish(msg)
+        except ValueError:
+            print("Invalid radius or Z value")
 
     def publish_commands(self):
         msg = Float64MultiArray()
