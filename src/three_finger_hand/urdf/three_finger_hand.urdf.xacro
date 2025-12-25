@@ -34,7 +34,7 @@
   </link>
 
   <xacro:finger prefix="finger_1" parent="palm">
-    <origin xyz="0.05785 0 0.06375" rpy="0 0.52333333 0"/>
+    <origin xyz="0.05777 0 0.06375" rpy="0 0.52333333 0"/>
   </xacro:finger>
 
   <xacro:finger prefix="finger_2" parent="palm">

@@ -6,21 +6,65 @@ This project contains a 3-finger robot, its UI, simulation and design. This robo
 
 ## Usage
 
-After cloning project, and being sure installing required programs, go to the project directory and open 3 terminals. Then, run the code below.
+**Note**: Before starting, please keep in mind that the commands below is valid for bash. If you use Powershell or another shell except bash, check commands before running.
+
+### Preliminary
+
+After cloning project, firstly you should install required libraries and run some scripts to automatically generate required files. Here are how to do.
 
 ```bash
-# Terminal 1 (To view in RViz, optional)
-source install/setup.bash
-colcon build # 1-time-required, additionally required after editing
-ros2 launch three_finger_hand display.launch.py # Opens config.rviz automatically
+# In the project directory
+colcon build
+cd src/three_finger_hand/launch
+python3 -m venv .venv # Choosing ".venv" name is recommended to avoid gitignore problems
+source .venv/bin/activate
+pip install PyYAML setuptools jinja2 typeguard numpy ikpy
+```
 
-# Terminal 2 (To simulate in Gazebo)
+### Starting RViz to preview the robot
+
+```bash
+# In the project directory
 source install/setup.bash
-colcon build # Run if skipped Terminal 1
+ros2 launch three_finger_hand display.launch.py
+```
+
+### Starting Gazebo simulation
+
+```bash
+# In the project directory
+source install/setup.bash
 ros2 launch three_finger_hand simulation.launch.py
+```
 
-# Terminal 3 (To drive the robot using GUI)
-python3 src/three_finger_hand/launch/controller_gui.py
+### Running IK solver
+
+Be sure running Gazebo Sim before running this.
+
+```bash
+# In the project directory
+source install/setup.bash
+cd src/three_finger_hand/launch
+source .venv/bin/activate
+python3 ik_solver_node.py
+```
+
+IK solver could be run with GUI. Also could be run with a command like below.
+
+```bash
+ros2 topic pub --once /finger_1/goal_pose geometry_msgs/msg/Point "{x: 0.045, y: 0.015, z: 0.19}"
+```
+
+### Opening GUI
+
+Be sure running Gazebo Sim and IK solver before running this.
+
+```bash
+# In the project directory
+source install/setup.bash
+cd src/three_finger_hand/launch
+source .venv/bin/activate
+python3 controller_gui.py
 ```
 
 ## Data and media related to the robot
@@ -38,6 +82,14 @@ You can find related Fusion files in the ```parts``` folder, and STL files in th
 * Video from Gazebo Sim showing demo movements
 
 [![Demo movement video](../media/screenshot%20from%20gazebo%20sim%20and%20control%20ui.png)](../media/screencast%20from%20gazebo%20sim.mp4)
+
+* Video from Gazebo Sim showing IK capabilities
+
+[![Demo IK video](../media/screenshot%20from%20gazebo%20sim%20and%20control%20ui.png)](../media/screencast%20from%20gazebo%20sim%20and%20ik.mp4)
+
+* Video from Gazebo Sim showing circular IK capabilities
+
+[![Demo circular IK video](../media/screenshot%20from%20circular%20ik%20demo.png)](../media/screencast%20from%20circular%20ik%20demo.mp4)
 
 * Photo from the robot in Fusion
 
