@@ -2,3 +2,4 @@ build/
 install/
 log/
 src/three_finger_hand/launch/.venv/
+src/three_finger_hand/launch/src/
