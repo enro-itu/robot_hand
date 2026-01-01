@@ -5,6 +5,19 @@ import subprocess
 from ament_index_python.packages import get_package_share_directory
 
 def run_circular_ik():
+    # Manually generate temporary URDF with debug info
+    try:
+        pkg_name = 'three_finger_hand'
+        pkg_share = get_package_share_directory(pkg_name)
+        xacro_file = os.path.join(pkg_share, 'urdf', 'three_finger_hand.urdf.xacro')
+        urdf_output = "/tmp/circular_hand_debug.urdf"
+
+        subprocess.run(['xacro', xacro_file, '-o', urdf_output], check=True)
+        print(f"Temporary URDF generated at {urdf_output}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error generating URDF: {e}")
+        return
+
     # Load URDF and Waypoints
     urdf_path = "/tmp/circular_hand_debug.urdf"
     waypoints = np.load('src/waypoints.npy')
