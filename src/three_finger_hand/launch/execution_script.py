@@ -49,9 +49,15 @@ class CircularExecutionNode(Node):
         self.get_logger().info("Task completed! All loops finished.")
 
 def main():
-    rclpy.init()
-    node = CircularExecutionNode()
-    rclpy.shutdown()
+    try:
+        print("Execution starting...")
+        rclpy.init()
+        node = CircularExecutionNode()
+        rclpy.shutdown()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        print("Execution finished.")
 
 if __name__ == '__main__':
     main()
