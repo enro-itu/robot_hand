@@ -3,6 +3,32 @@ import ikpy.chain
 import os
 import subprocess
 from ament_index_python.packages import get_package_share_directory
+import math
+
+FINGER_ANGLES = {
+    'f1': math.radians(0),
+    'f2': math.radians(120),
+    'f3': math.radians(240)
+}
+
+JOINT_LIMITS = {
+    'finger_1_joint_1': (-1.24, 1.24), 'finger_1_joint_2': (-0.61, 1.24),
+    'finger_1_joint_3': (-1.24, 1.24), 'finger_1_joint_4': (-1.5, 1.5),
+    'finger_2_joint_1': (-1.24, 1.24), 'finger_2_joint_2': (-0.61, 1.24),
+    'finger_2_joint_3': (-1.24, 1.24), 'finger_2_joint_4': (-1.5, 1.5),
+    'finger_3_joint_1': (-1.24, 1.24), 'finger_3_joint_2': (-0.61, 1.24),
+    'finger_3_joint_3': (-1.24, 1.24), 'finger_3_joint_4': (-1.5, 1.5)
+}
+
+def get_bounds(chain):
+    bounds = []
+    for link in chain.links:
+        if link.name in JOINT_LIMITS:
+            bounds.append(JOINT_LIMITS[link.name])
+        else:
+            # for fixed joints
+            bounds.append((0, 0))
+    return bounds
 
 def run_circular_ik():
     # Manually generate temporary URDF with debug info
@@ -30,19 +56,21 @@ def run_circular_ik():
     }
 
     # Mask chains to only move finger joints
-    for c in chains.values():
-        mask = [False] * len(c.links)
-        for i in range(1, len(c.links) - 1): mask[i] = True
-        c.active_links_mask = mask
+    chain_bounds = {}
 
-    for finger, chain in chains.items():
-        n_links = len(chain.links)
-        print(f"\n{finger.upper()} Chain Info:")
-        print(f"Chain Structure: {[link.name for link in chain.links]}")
-        print(f"Active Joint Mask: {chain.active_links_mask}")
+    for key, chain in chains.items():
+        for link in chain.links:
+            if link.name in JOINT_LIMITS:
+                link.bounds = JOINT_LIMITS[link.name]
+            elif link.name != "Base link":
+                link.bounds = (0, 0)
 
+        mask = [False] * len(chain.links)
+        for i in range(1, len(chain.links) - 1):
+            mask[i] = True
+        chain.active_links_mask = mask
+        chain_bounds[key] = get_bounds(chain)
     trajectory_12dof = []
-    # last_ik_res = [0.0] * n_links
     success_count = 0
     last_results = {k: [0.0] * len(v.links) for k, v in chains.items()}
 
@@ -52,7 +80,18 @@ def run_circular_ik():
 
         # IK Solution
         for f_idx, (key, chain) in enumerate(chains.items()):
-            ik_res = chain.inverse_kinematics(target, initial_position=last_results[key])
+            angle = FINGER_ANGLES[key]
+            offset_radius = 0.005
+            target_for_finger = np.array([
+                target[0] + offset_radius * math.cos(angle),
+                target[1] + offset_radius * math.sin(angle),
+                target[2]
+            ])
+            ik_res = chain.inverse_kinematics(
+                target_for_finger,
+                initial_position=last_results[key],
+            #    bounds=chain_bounds[key]
+            )
             last_results[key] = ik_res
 
             # Verification with FK
