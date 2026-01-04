@@ -28,9 +28,9 @@ def visualize_circle(points, center, normal):
     plt.show()
 
 if __name__ == "__main__":
-    center = [-0.02845557, 0.04310951, 0.12971483]
-    normal = [0, 0.6, 0.8]
-    radius = 0.001
+    center = [0.0, 0.0, 0.19]
+    normal = [0, 0, 1]
+    radius = 0.06
     N = 50
 
     waypoints = generate_circle_points(center, normal, radius, N)
