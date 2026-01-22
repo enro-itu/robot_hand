@@ -7,7 +7,6 @@ from geometry_msgs.msg import Point
 import tkinter as tk
 from tkinter import ttk
 import random
-import math
 
 JOINT_ORDER = [
     'finger_1_joint_1', 'finger_1_joint_2', 'finger_1_joint_3', 'finger_1_joint_4',
