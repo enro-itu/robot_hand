@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from visualization_msgs.msg import Marker, MarkerArray
@@ -51,14 +53,17 @@ class WaypointRvizVisualizer(Node):
         self.publisher.publish(marker_array)
 
 def main():
-    rclpy.init()
-    node = WaypointRvizVisualizer()
     try:
+        rclpy.init()
+        node = WaypointRvizVisualizer()
         rclpy.spin(node)
+        node.destroy_node()
+        rclpy.shutdown()
     except KeyboardInterrupt:
-        pass
-    node.destroy_node()
-    rclpy.shutdown()
+        print("Keyboard Interrupt detected. Shutting down...")
+    finally:
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

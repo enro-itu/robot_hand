@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-def generate_circle_points(center, normal, radius, N):
+def generate_circle_points(center, normal, radius, N, angle_offset=0.0):
     center = np.array(center)
     normal = np.array(normal) / np.linalg.norm(normal)
 
@@ -14,7 +14,7 @@ def generate_circle_points(center, normal, radius, N):
     u /= np.linalg.norm(u)
     v = np.cross(normal, u)
 
-    thetas = np.linspace(0, 2 * np.pi, N, endpoint=False)
+    thetas = np.linspace(0, 2 * np.pi, N, endpoint=False) + angle_offset
     points = [center + radius * np.cos(t) * u + radius * np.sin(t) * v for t in thetas]
     return np.array(points)
 
@@ -38,6 +38,8 @@ if __name__ == "__main__":
                         help="Normal vector of the plane (nx ny nz)")
     parser.add_argument("--radius", "-r", type=float, required=True, help="Radius of the circle")
     parser.add_argument("--N", "-p", type=int, required=True, help="Number of waypoints along the circle")
+    parser.add_argument("--offset-deg", "-o", type=float, default=0.0,
+                        help="Rotate the circle about its normal by this many degrees")
     args = parser.parse_args()
 
     if args.radius <= 0:
@@ -49,8 +51,9 @@ if __name__ == "__main__":
     normal = args.normal
     radius = args.radius
     N = args.N
+    angle_offset_rad = np.deg2rad(args.offset_deg)
 
-    waypoints = generate_circle_points(center, normal, radius, N)
+    waypoints = generate_circle_points(center, normal, radius, N, angle_offset_rad)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     output_dir = os.path.join(script_dir, 'src')
