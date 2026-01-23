@@ -8,7 +8,7 @@ class WaypointRvizVisualizer(Node):
     def __init__(self):
         super().__init__('waypoint_rviz_visualizer')
         self.publisher = self.create_publisher(MarkerArray, 'visualization_marker_array', 10)
-        # Her 2 saniyede bir markerları tazeler
+        # Refresh markers every 2 seconds
         self.timer = self.create_timer(2.0, self.publish_markers)
         self.get_logger().info("Waypoint Visualizer started.")
 

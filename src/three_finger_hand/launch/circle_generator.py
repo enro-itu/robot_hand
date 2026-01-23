@@ -1,5 +1,6 @@
-import numpy as np
+import argparse
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 
 def generate_circle_points(center, normal, radius, N):
@@ -13,7 +14,7 @@ def generate_circle_points(center, normal, radius, N):
     u /= np.linalg.norm(u)
     v = np.cross(normal, u)
 
-    thetas = np.linspace(0, 2 * np.pi, N)
+    thetas = np.linspace(0, 2 * np.pi, N, endpoint=False)
     points = [center + radius * np.cos(t) * u + radius * np.sin(t) * v for t in thetas]
     return np.array(points)
 
@@ -28,16 +29,33 @@ def visualize_circle(points, center, normal):
     plt.show()
 
 if __name__ == "__main__":
-    # Sample appropriate parameters, please preview by running
-    # waypoint_visualiser.py to be sure the circle looks correct
-    center = [0.0, 0.0, 0.19]
-    normal = [0, 0, 1]
-    radius = 0.06
-    N = 50
+    # Example run: circle_generator.py -c 0.6 0 0.19 -n 0 0 1 -r 0.06 -p 50
+
+    parser = argparse.ArgumentParser(description="Generate circular waypoints from CLI input.")
+    parser.add_argument("--center", "-c", type=float, nargs=3, required=True, metavar=("X", "Y", "Z"),
+                        help="Center of the circle (x y z)")
+    parser.add_argument("--normal", "-n", type=float, nargs=3, required=True, metavar=("NX", "NY", "NZ"),
+                        help="Normal vector of the plane (nx ny nz)")
+    parser.add_argument("--radius", "-r", type=float, required=True, help="Radius of the circle")
+    parser.add_argument("--N", "-p", type=int, required=True, help="Number of waypoints along the circle")
+    args = parser.parse_args()
+
+    if args.radius <= 0:
+        raise ValueError("radius must be positive")
+    if args.N < 3:
+        raise ValueError("N must be at least 3 to form a circle")
+
+    center = args.center
+    normal = args.normal
+    radius = args.radius
+    N = args.N
 
     waypoints = generate_circle_points(center, normal, radius, N)
 
-    os.makedirs('src', exist_ok=True)
-    np.save('src/waypoints.npy', waypoints)
-    print(f"{N} waypoints saved to 'src/waypoints.npy'.")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, 'src')
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, 'waypoints.npy')
+    np.save(output_path, waypoints)
+    print(f"{N} waypoints saved to '{output_path}'.")
     visualize_circle(waypoints, center, normal)

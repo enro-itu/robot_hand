@@ -57,8 +57,23 @@ class IKSolverNode(Node):
         print(f"[{finger_name}] Target Received: x={msg.x:.3f}, y={msg.y:.3f}, z={msg.z:.3f}")
 
         try:
-            target_pos = [msg.x, msg.y, msg.z]
-            chain = self.chains[finger_name]
+            x, y, z = msg.x, msg.y, msg.z
+            sqrt3 = np.sqrt(3)
+
+            if finger_id == 3:
+                tx = -x/2.0 - (sqrt3 * y)/2.0
+                ty = (sqrt3 * x)/2.0 - y/2.0
+                tz = z
+            elif finger_id == 2:
+                tx = -x/2.0 + (sqrt3 * y)/2.0
+                ty = -(sqrt3 * x)/2.0 - y/2.0
+                tz = z
+            else: # finger_1
+                tx, ty, tz = x, y, z
+
+            target_pos = [tx, ty, tz]
+
+            chain = self.chains['finger_1']
 
             ik_angles = chain.inverse_kinematics(target_pos)
 
@@ -67,12 +82,12 @@ class IKSolverNode(Node):
 
             error = np.linalg.norm(np.array(target_pos) - np.array(computed_pos))
 
-            if error > 0.01:
+            """if error > 0.01:
                 self.get_logger().warn(f"Target UNREACHABLE for {finger_name}! Error distance: {error:.4f}m")
                 warn_msg = String()
                 warn_msg.data = f"Unreachable target"
                 self.status_pub.publish(warn_msg)
-                return
+                return"""
 
             new_angles = ik_angles[1:5].tolist()
 
