@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 import numpy as np
@@ -29,7 +31,7 @@ def visualize_circle(points, center, normal):
     plt.show()
 
 if __name__ == "__main__":
-    # Example run: circle_generator.py -c 0.6 0 0.19 -n 0 0 1 -r 0.06 -p 50
+    # Example run: circle_generator.py -c 0.6 0 0.19 -n 0 0 1 -r 0.06 -p 3 -o -90
 
     parser = argparse.ArgumentParser(description="Generate circular waypoints from CLI input.")
     parser.add_argument("--center", "-c", type=float, nargs=3, required=True, metavar=("X", "Y", "Z"),
@@ -40,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--N", "-p", type=int, required=True, help="Number of waypoints along the circle")
     parser.add_argument("--offset-deg", "-o", type=float, default=0.0,
                         help="Rotate the circle about its normal by this many degrees")
+    parser.add_argument("--show-plot", "-s", action="store_true", help="If set, show the plot")
     args = parser.parse_args()
 
     if args.radius <= 0:
@@ -61,4 +64,5 @@ if __name__ == "__main__":
     output_path = os.path.join(output_dir, 'waypoints.npy')
     np.save(output_path, waypoints)
     print(f"{N} waypoints saved to '{output_path}'.")
-    visualize_circle(waypoints, center, normal)
+    if args.show_plot:
+        visualize_circle(waypoints, center, normal)
