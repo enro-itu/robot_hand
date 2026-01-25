@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-print("Script starting...")
-
 import sys
 import os
 import subprocess
@@ -112,6 +110,7 @@ class IKSolverNode(Node):
 
 def main():
     try:
+        print("--- Script starting... ---")
         rclpy.init()
         node = IKSolverNode()
         rclpy.spin(node)
@@ -120,7 +119,7 @@ def main():
     finally:
         if rclpy.ok():
             rclpy.shutdown()
-        print("--- Script Closed ---")
+        print("--- Script closed ---")
 
 if __name__ == '__main__':
     main()
