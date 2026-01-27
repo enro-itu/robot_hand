@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 import random
 import numpy as np
+import os
 
 JOINT_ORDER = [
     'finger_1_joint_1', 'finger_1_joint_2', 'finger_1_joint_3', 'finger_1_joint_4',
@@ -197,7 +198,6 @@ class HandControlGUI(Node):
     def position_fingers_circle(self):
         try:
             # Load the waypoints file
-            import os
             script_dir = os.path.dirname(os.path.abspath(__file__))
             waypoints_path = os.path.join(script_dir, 'src', 'waypoints.npy')
 
