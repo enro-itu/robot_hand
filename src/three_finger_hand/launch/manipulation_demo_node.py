@@ -1,118 +1,109 @@
 #!/usr/bin/env python3
 
-import os
-import subprocess
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
-import ikpy.chain
+from geometry_msgs.msg import Point
+import time
+import os
 import numpy as np
-from ament_index_python.packages import get_package_share_directory
+import subprocess
 
-class ManipulationDemoNode(Node):
+class ManipulationNode(Node):
     def __init__(self):
-        super().__init__('manipulation_demo_node')
+        super().__init__('manipulation_node')
 
-        pkg_share = get_package_share_directory('three_finger_hand')
-        xacro_path = os.path.join(pkg_share, 'urdf', 'three_finger_hand.urdf.xacro')
-        urdf_temp_path = "/tmp/hand_robot_demo.urdf"
-        subprocess.run(f"xacro {xacro_path} > {urdf_temp_path}", shell=True, check=True)
-
-        self.chains = {
-            'f1': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_1"),
-            'f2': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_2"),
-            'f3': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_3")
+        self.ik_pubs = {
+            'Finger 1': self.create_publisher(Point, '/finger_1/goal_pose', 10),
+            'Finger 2': self.create_publisher(Point, '/finger_2/goal_pose', 10),
+            'Finger 3': self.create_publisher(Point, '/finger_3/goal_pose', 10)
         }
-
-        for name, chain in self.chains.items():
-            self.get_logger().info(f"{name} chain loaded with {len(chain.links)} links.")
-
-        self.cmd_pub = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
+        self.joint_cmd_pub = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
 
         self.state = "OPEN"
         self.start_time = self.get_clock().now()
-        self.joint_state = [0.0] * 12 # Current joint angles
-        self.initial_angles = [0.0] * 12 # Initial (open) pose
-        self.wrap_angles = [0.0] * 12 # IK-computed wrap pose
+        self.timer = self.create_timer(0.1, self.control_loop)
 
-        # Target: Cylinder (0, 0, 0.20)
-        self.obj_pos = [0.0, 0.0, 0.20]
-        self.grasp_radius = 0.07 # Close (wrapped) radius
+        # File paths
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.waypoints_path = os.path.join(self.script_dir, 'src', 'waypoints.npy')
 
-        # Control Loop (10 Hz)
-        self.timer = self.create_timer(0.1, self.timer_callback)
-        self.get_logger().info("Manipulation Demo Started: State = OPEN")
+        self.get_logger().info("Manipulation demo started")
 
-    def get_ik_for_radius(self, radius):
-        angles_12 = [0.0] * 12
-        z_target = self.obj_pos[2]
-        angles = [0, 4.1888, 2.0944]
-        sqrt3 = np.sqrt(3)
+    def run_circle_generator(self): # To run circle_generator.py internally
+        try:
+            # Operated command: -c 0 0 0.2 -r 0.06 -p 3 -o -90
+            command = [
+                "python3", "circle_generator.py",
+                "-c", "0", "0", "0.2",
+                "-n", "0", "0", "1",
+                "-r", "0.06", "-p", "3", "-o", "-90"
+            ]
+            subprocess.run(command, check=True, cwd=self.script_dir)
+            self.get_logger().info("Circle generator operated.")
+        except Exception as e:
+            self.get_logger().error(f"Generator error: {e}")
 
-        for i in range(3):
-            target_local = [radius * np.cos(angles[i]),
-                        radius * np.sin(angles[i]),
-                        z_target]
+    def position_fingers_circle(self):
+        try:
+            if not os.path.exists(self.waypoints_path):
+                self.get_logger().error(f"Waypoints not found: {self.waypoints_path}")
+                return False
 
-            chain = self.chains[f'f{i+1}']
-            ik_res = chain.inverse_kinematics(target_local)
+            waypoints = np.load(self.waypoints_path)
 
-            real_angles = [angle for j, angle in enumerate(ik_res) if chain.links[j].name.find("joint") != -1]
-            angles_12[i*4 : i*4+len(real_angles)] = real_angles[:4]
-        return angles_12
+            for i in range(min(3, len(waypoints))):
+                msg = Point()
+                msg.x = float(waypoints[i][0])
+                msg.y = float(waypoints[i][1])
+                msg.z = float(waypoints[i][2])
 
-    def apply_synergy(self, base_angles, g):
-        tighten_offset = 0.3
-        new_angles = list(base_angles)
-        for i in range(12):
-            if i % 4 in [1, 3]:
-                new_angles[i] += g * tighten_offset
-        return new_angles
+                finger_name = f"Finger {i+1}"
+                self.ik_pubs[finger_name].publish(msg)
+                self.get_logger().info(f"{finger_name} sent to {waypoints[i]}")
+            return True
+        except Exception as e:
+            self.get_logger().error(f"Failed to read waypoints.npy file: {e}")
+            return False
 
-    def timer_callback(self):
+    def control_loop(self):
         now = self.get_clock().now()
         elapsed = (now - self.start_time).nanoseconds / 1e9
-        msg = Float64MultiArray()
 
         if self.state == "OPEN":
+            # Open palm
+            msg = Float64MultiArray()
             msg.data = [0.0] * 12
-            if elapsed > 1.5:
-                self.wrap_angles = self.get_ik_for_radius(self.grasp_radius)
+            self.joint_cmd_pub.publish(msg)
+            if elapsed > 2.0:
+                self.run_circle_generator()
                 self.transition("WRAP", now)
 
         elif self.state == "WRAP":
-            alpha = min(1.0, elapsed / 2.5) # 2.5 seconds ramp
-            msg.data = (np.array(self.initial_angles) * (1-alpha) + np.array(self.wrap_angles) * alpha).tolist()
-            if elapsed > 3.0:
-                self.transition("CLOSE", now)
+            success = self.position_fingers_circle()
+            if success and elapsed > 4.0:
+                self.transition("GRASP", now)
+            self.state = "FINISHED"
 
-        elif self.state == "CLOSE":
-            # Grasp Synergy: Ramp g from 0 to 1
-            g = min(1.0, elapsed / 1.0)
-            msg.data = self.apply_synergy(self.wrap_angles, g)
-            if elapsed > 1.5:
-                self.transition("HOLD", now)
+        # TODO Add other tasks later
+        elif self.state == "GRASP":
+            pass
 
         elif self.state == "HOLD":
-            msg.data = self.apply_synergy(self.wrap_angles, 1.0)
-            if elapsed > 4.0:
-                self.get_logger().info("Demo Successfully Completed!")
-                # Optional: self.transition("OPEN", now) to loop back.
-
-        self.cmd_pub.publish(msg)
+            pass
 
     def transition(self, next_state, now):
-        self.get_logger().info(f"State Transition: {self.state} -> {next_state}")
+        self.get_logger().info(f"Transition from {self.state} to {next_state}")
         self.state = next_state
         self.start_time = now
 
 def main(args=None):
     try:
         rclpy.init(args=args)
-        node = ManipulationDemoNode()
+        node = ManipulationNode()
         rclpy.spin(node)
     except KeyboardInterrupt:
-        print("Keyboard Interrupt detected, shutting down...")
+        pass
     finally:
         node.destroy_node()
         rclpy.shutdown()

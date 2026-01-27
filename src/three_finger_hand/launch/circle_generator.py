@@ -31,7 +31,7 @@ def visualize_circle(points, center, normal):
     plt.show()
 
 if __name__ == "__main__":
-    # Example run: circle_generator.py -c 0.6 0 0.19 -n 0 0 1 -r 0.06 -p 3 -o -90
+    # Example run: circle_generator.py -c 0.06 0 0.19 -n 0 0 1 -r 0.06 -p 3 -o -90
 
     parser = argparse.ArgumentParser(description="Generate circular waypoints from CLI input.")
     parser.add_argument("--center", "-c", type=float, nargs=3, required=True, metavar=("X", "Y", "Z"),
