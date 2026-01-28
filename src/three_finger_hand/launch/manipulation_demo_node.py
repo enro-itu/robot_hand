@@ -20,6 +20,14 @@ class ManipulationNode(Node):
         }
         self.joint_cmd_pub = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
 
+        self.last_joint_state = [0.0] * 12  # Placeholder for last joint states
+
+        self.joint_sub = self.create_subscription(
+            Float64MultiArray,
+            '/forward_position_controller/commands',
+            self.joint_callback,
+            10)
+
         self.state = "OPEN"
         self.start_time = self.get_clock().now()
         self.timer = self.create_timer(0.1, self.control_loop)
@@ -69,10 +77,12 @@ class ManipulationNode(Node):
     def control_loop(self):
         now = self.get_clock().now()
         elapsed = (now - self.start_time).nanoseconds / 1e9
+        
+        msg = Float64MultiArray()
 
         if self.state == "OPEN":
             # Open palm
-            msg = Float64MultiArray()
+            # msg = Float64MultiArray()
             msg.data = [0.0] * 12
             self.joint_cmd_pub.publish(msg)
             if elapsed > 2.0:
@@ -82,20 +92,50 @@ class ManipulationNode(Node):
         elif self.state == "WRAP":
             success = self.position_fingers_circle()
             if success and elapsed > 4.0:
+                self.wrap_base_angles = list(self.last_joint_state)
                 self.transition("GRASP", now)
-            self.state = "FINISHED"
 
-        # TODO Add other tasks later
         elif self.state == "GRASP":
-            pass
+            g = min(1.0, elapsed / 1.0)
+            tighten_offset = 0.3
+            current_angles = list(self.wrap_base_angles)
+
+            for i in range(12):
+                if i % 4 in [1, 3]:
+                    current_angles[i] -= g * tighten_offset
+
+            msg.data = current_angles
+            self.joint_cmd_pub.publish(msg)
+
+            if elapsed > 3.0:
+                self.transition("HOLD", now)
 
         elif self.state == "HOLD":
-            pass
+            msg.data = self.apply_final_grasp()
+            self.joint_cmd_pub.publish(msg)
+
+            if elapsed > 3.0:
+                self.state = "FINISHED"
+                self.get_logger().info("Manipulation demo finished.")
 
     def transition(self, next_state, now):
         self.get_logger().info(f"Transition from {self.state} to {next_state}")
         self.state = next_state
         self.start_time = now
+
+    def joint_callback(self, msg):
+        if len(msg.data) == 12:
+            self.last_joint_state = list(msg.data)
+
+    def apply_final_grasp(self):
+        tighten_offset = 0.3
+        final_angles = list(self.wrap_base_angles)
+
+        for i in range(12):
+            if i % 4 in [1, 3]:
+                final_angles[i] -= tighten_offset
+
+        return final_angles
 
 def main(args=None):
     try:
