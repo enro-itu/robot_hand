@@ -30,6 +30,7 @@ class ManipulationNode(Node):
 
         self.state = "OPEN"
         self.start_time = self.get_clock().now()
+        self.state_action_done = False  # Track if current state's action has been executed
         self.timer = self.create_timer(0.1, self.control_loop)
 
         # File paths
@@ -81,17 +82,19 @@ class ManipulationNode(Node):
         msg = Float64MultiArray()
 
         if self.state == "OPEN":
-            # Open palm
-            # msg = Float64MultiArray()
-            msg.data = [0.0] * 12
-            self.joint_cmd_pub.publish(msg)
+            if not self.state_action_done:
+                msg.data = [0.0] * 12
+                self.joint_cmd_pub.publish(msg)
+                self.state_action_done = True
             if elapsed > 2.0:
                 self.run_circle_generator()
                 self.transition("WRAP", now)
 
         elif self.state == "WRAP":
-            success = self.position_fingers_circle()
-            if success and elapsed > 4.0:
+            if not self.state_action_done:
+                success = self.position_fingers_circle()
+                self.state_action_done = True
+            if elapsed > 4.0:
                 self.wrap_base_angles = list(self.last_joint_state)
                 self.transition("GRASP", now)
 
@@ -111,8 +114,10 @@ class ManipulationNode(Node):
                 self.transition("HOLD", now)
 
         elif self.state == "HOLD":
-            msg.data = self.apply_final_grasp()
-            self.joint_cmd_pub.publish(msg)
+            if not self.state_action_done:
+                msg.data = self.apply_final_grasp()
+                self.joint_cmd_pub.publish(msg)
+                self.state_action_done = True
 
             if elapsed > 3.0:
                 self.state = "FINISHED"
@@ -122,6 +127,7 @@ class ManipulationNode(Node):
         self.get_logger().info(f"Transition from {self.state} to {next_state}")
         self.state = next_state
         self.start_time = now
+        self.state_action_done = False  # Reset action flag for new state
 
     def joint_callback(self, msg):
         if len(msg.data) == 12:
