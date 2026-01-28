@@ -8,6 +8,7 @@ import time
 import os
 import numpy as np
 import subprocess
+import signal
 
 class ManipulationNode(Node):
     def __init__(self):
@@ -31,6 +32,7 @@ class ManipulationNode(Node):
         self.state = "OPEN"
         self.start_time = self.get_clock().now()
         self.state_action_done = False  # Track if current state's action has been executed
+        self.shutdown_requested = False  # Flag for graceful shutdown
         self.timer = self.create_timer(0.1, self.control_loop)
 
         # File paths
@@ -81,6 +83,12 @@ class ManipulationNode(Node):
         
         msg = Float64MultiArray()
 
+        # If shutdown requested, allow current state to finish gracefully
+        if self.shutdown_requested and self.state in ["OPEN", "WRAP", "GRASP"]:
+            self.state = "HOLD"
+            self.start_time = now
+            self.state_action_done = False
+
         if self.state == "OPEN":
             if not self.state_action_done:
                 msg.data = [0.0] * 12
@@ -119,7 +127,7 @@ class ManipulationNode(Node):
                 self.joint_cmd_pub.publish(msg)
                 self.state_action_done = True
 
-            if elapsed > 3.0:
+            if elapsed > 3.0 or self.shutdown_requested:
                 self.state = "FINISHED"
                 self.get_logger().info("Manipulation demo finished.")
 
@@ -144,14 +152,25 @@ class ManipulationNode(Node):
         return final_angles
 
 def main(args=None):
+    def signal_handler(sig, frame):
+        node.get_logger().info("Ctrl+C received. Finishing current operation before shutdown...")
+        node.shutdown_requested = True
+
     try:
         rclpy.init(args=args)
         node = ManipulationNode()
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+        signal.signal(signal.SIGINT, signal_handler)
+
+        # Spin until FINISHED state
+        while rclpy.ok() and node.state != "FINISHED":
+            rclpy.spin_once(node, timeout_sec=0.1)
+
+        node.get_logger().info("Shutting down node.")
+    except Exception as e:
+        print(f"Error: {e}")
     finally:
-        node.destroy_node()
+        if 'node' in locals():
+            node.destroy_node()
         rclpy.shutdown()
 
 if __name__ == '__main__':
