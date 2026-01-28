@@ -64,7 +64,8 @@
     </model>
 
     <model name='target_cylinder'>
-        <pose>0 0 0.2 0 0 0</pose> 
+        <static>false</static>
+        <pose>0 0 0.7 0 0 0</pose> 
         <link name='link'>
             <inertial>
             <mass>0.2</mass> <inertia>
