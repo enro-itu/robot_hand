@@ -8,12 +8,15 @@
 
 ## Target Object (Cylinder)
 
-* **Fixed Pose:**
-* **Position (XYZ):** .
-* **Orientation (RPY):** .
-* **Dimensions:**
+**Fixed Pose:**
+
+* **Position (XYZ):** 0 0 0.7.
+* **Orientation (RPY):** 0 0 0.
+
+**Dimensions:**
+
 * **Radius:**  m (5 cm).
-* **Height:**  m (10 cm).
+* **Height:**  m (20 cm).
 
 ## Robot Hand Configuration
 
