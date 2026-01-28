@@ -10,6 +10,8 @@ def generate_launch_description():
     pkg_name = 'three_finger_hand'
     pkg_share = get_package_share_directory(pkg_name)
 
+    world_path = os.path.join(pkg_share, 'worlds', 'cylinder.sdf')
+
     install_dir = os.path.dirname(pkg_share)
 
     gz_plugin_path = os.path.join(
@@ -33,7 +35,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
         ),
-        launch_arguments={'gz_args': '-r empty.sdf'}.items(),
+        launch_arguments={'gz_args': '-r ' + world_path}.items(),
     )
 
     # Spawn robot in Gazebo
