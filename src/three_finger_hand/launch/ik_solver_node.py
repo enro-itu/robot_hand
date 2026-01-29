@@ -24,20 +24,31 @@ class IKSolverNode(Node):
         print(f"Xacro path: {xacro_path}")
         subprocess.run(f"xacro {xacro_path} > {urdf_temp_path}", shell=True, check=True)
 
-        self.chains = {
-            'finger_1': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_1"),
-            'finger_2': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_2"),
-            'finger_3': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_3")
-        }
-        
-        for name, chain in self.chains.items():
-            print(f"{name} chain loaded with {len(chain.links)} links.")
+        # Load IK chains for each finger with proper ending effectors
+        self.chains = {}
+        for finger_id in range(1, 4):
+            finger_name = f'finger_{finger_id}'
+            try:
+                chain = ikpy.chain.Chain.from_urdf_file(
+                    urdf_temp_path, 
+                    base_elements=["palm"], 
+                    last_link_vector=[0, 0, 0.07],  # Offset from middle to distal tip
+                    name=finger_name
+                )
+                self.chains[finger_name] = chain
+                print(f"{finger_name} chain loaded with {len(chain.links)} links.")
+                # Log all joint names in the chain
+                for i, link in enumerate(chain.links):
+                    print(f"  Link {i}: {link.name}")
+            except Exception as e:
+                self.get_logger().error(f"Failed to load chain for {finger_name}: {e}")
+                raise
 
         self.publisher_ = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
         self.status_pub = self.create_publisher(String, '/ik_solver/status', 10)
         # Track latest commanded joint state so IK updates stay in sync with GUI actions like reset
         self.create_subscription(Float64MultiArray, '/forward_position_controller/commands', self.update_joint_state, 10)
-        
+
         self.create_subscription(Point, '/finger_1/goal_pose', partial(self.calculate_ik_callback, finger_id=1), 10)
         self.create_subscription(Point, '/finger_2/goal_pose', partial(self.calculate_ik_callback, finger_id=2), 10)
         self.create_subscription(Point, '/finger_3/goal_pose', partial(self.calculate_ik_callback, finger_id=3), 10)
@@ -71,7 +82,7 @@ class IKSolverNode(Node):
 
             target_pos = [tx, ty, tz]
 
-            chain = self.chains['finger_1']
+            chain = self.chains[finger_name]
 
             ik_angles = chain.inverse_kinematics(target_pos)
 
