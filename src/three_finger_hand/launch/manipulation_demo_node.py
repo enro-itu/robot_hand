@@ -128,8 +128,22 @@ class ManipulationNode(Node):
                 self.state_action_done = True
 
             if elapsed > 3.0 or self.shutdown_requested:
-                self.state = "FINISHED"
-                self.get_logger().info("Manipulation demo finished.")
+                self.transition("MOVE_UP", now)
+
+        elif self.state == "MOVE_UP":
+            g = min(1.0, elapsed / 2.0)
+            lift_height = 0.6
+            current_angles = list(self.apply_final_grasp())
+
+            for i in range(3):
+                finger_base_index = i * 4
+                current_angles[finger_base_index + 2] += g * lift_height
+
+            msg.data = current_angles
+            self.joint_cmd_pub.publish(msg)
+
+            if elapsed > 2.0:
+                self.transition("FINISHED", now)
 
     def transition(self, next_state, now):
         self.get_logger().info(f"Transition from {self.state} to {next_state}")
