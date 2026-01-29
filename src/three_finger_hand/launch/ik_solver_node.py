@@ -32,7 +32,7 @@ class IKSolverNode(Node):
                 chain = ikpy.chain.Chain.from_urdf_file(
                     urdf_temp_path, 
                     base_elements=["palm"],
-                    last_link_vector=[0, 0, 0.035],  # Offset from middle to distal tip
+                    last_link_vector=[0, 0, 0.03],  # Offset from middle to distal tip
                     name=finger_name
                 )
                 self.chains[finger_name] = chain
