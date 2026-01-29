@@ -31,8 +31,8 @@ class IKSolverNode(Node):
             try:
                 chain = ikpy.chain.Chain.from_urdf_file(
                     urdf_temp_path, 
-                    base_elements=["palm"], 
-                    last_link_vector=[0, 0, 0.07],  # Offset from middle to distal tip
+                    base_elements=["palm"],
+                    last_link_vector=[0, 0, 0.035],  # Offset from middle to distal tip
                     name=finger_name
                 )
                 self.chains[finger_name] = chain
@@ -77,7 +77,7 @@ class IKSolverNode(Node):
                 tx = -x/2.0 + (sqrt3 * y)/2.0
                 ty = -(sqrt3 * x)/2.0 - y/2.0
                 tz = z
-            else: # finger_1
+            else:
                 tx, ty, tz = x, y, z
 
             target_pos = [tx, ty, tz]
