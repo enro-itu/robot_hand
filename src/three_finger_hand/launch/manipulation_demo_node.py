@@ -132,7 +132,7 @@ class ManipulationNode(Node):
 
         elif self.state == "MOVE_UP":
             g = min(1.0, elapsed / 2.0)
-            lift_height = 0.6
+            lift_height = 0.5
             current_angles = list(self.apply_final_grasp())
 
             for i in range(3):
