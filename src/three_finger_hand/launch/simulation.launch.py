@@ -1,14 +1,18 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, AppendEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, AppendEnvironmentVariable, DeclareLaunchArgument, LogInfo
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command
 from launch_ros.actions import Node
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 
 def generate_launch_description():
     pkg_name = 'three_finger_hand'
     pkg_share = get_package_share_directory(pkg_name)
+
+    world_path = os.path.join(pkg_share, 'worlds', 'cylinder.sdf')
 
     install_dir = os.path.dirname(pkg_share)
 
@@ -25,15 +29,25 @@ def generate_launch_description():
         value=gz_plugin_path
     )
 
-    xacro_file = os.path.join(pkg_share, 'urdf', 'three_finger_hand.urdf.xacro')  # Xacro -> URDF
+    xacro_file = os.path.join(pkg_share, 'urdf', 'three_finger_hand.urdf.xacro') # Xacro -> URDF
     robot_description = {'robot_description': Command(['xacro ', xacro_file])}
+
+    man_arg = DeclareLaunchArgument(
+        'man',
+        default_value='false',
+        description='Start simulation with a cylinder to manipulate'
+    )
 
     # Run Gazebo
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
         ),
-        launch_arguments={'gz_args': '-r empty.sdf'}.items(),
+        launch_arguments={
+            'gz_args': PythonExpression([
+                "'-r ' + '", world_path, "' if '", LaunchConfiguration('man'), "' == 'true' else '-r empty.sdf'"
+            ])
+        }.items(),
     )
 
     # Spawn robot in Gazebo
@@ -78,6 +92,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        man_arg,
         set_res_path,
         set_plugin_path,
         gazebo,

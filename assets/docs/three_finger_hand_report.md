@@ -67,6 +67,10 @@ source .venv/bin/activate
 python3 controller_gui.py
 ```
 
+To use "Position Fingers in Circle" in the GUI, be sure running the circle_generator.py firstly.
+
+For definitions and media related to manipulation demos, please see [definitions.md](definitions.md).
+
 ## Data and media related to the robot
 
 You can find related Fusion files in the ```parts``` folder, and STL files in the ```src/three_finger_hand/meshes``` directory. Also, the ```assets``` folder includes media related to robot. Here are some screenshots while robot running.

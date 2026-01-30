@@ -7,6 +7,8 @@ from geometry_msgs.msg import Point
 import tkinter as tk
 from tkinter import ttk
 import random
+import numpy as np
+import os
 
 JOINT_ORDER = [
     'finger_1_joint_1', 'finger_1_joint_2', 'finger_1_joint_3', 'finger_1_joint_4',
@@ -96,6 +98,10 @@ class HandControlGUI(Node):
         btn_solve_ik.pack(pady=5)
 
         # Circle positioning panel
+        btn_circle = tk.Button(self.root, text="Position Fingers in Circle", command=self.position_fingers_circle, bg="teal", fg="white")
+        btn_circle.pack(pady=5)
+
+        """# Circle positioning panel
         circle_frame = tk.Frame(self.root, bd=1, relief="solid", padx=10, pady=10)
         circle_frame.pack(pady=5, padx=20, fill="x")
         tk.Label(circle_frame, text="Radius (m):").pack(side="left")
@@ -103,7 +109,7 @@ class HandControlGUI(Node):
         self.ent_radius.insert(0, "0.05")
         self.ent_radius.pack(side="left", padx=5)
         btn_circle = tk.Button(circle_frame, text="Position Fingers in Circle", command=self.position_fingers_circle, bg="teal", fg="white")
-        btn_circle.pack(side="left", padx=5)
+        btn_circle.pack(side="left", padx=5)"""
         # -----------------------------------------------
 
         self.create_subscription(String, '/ik_solver/status', self.on_ik_status, 10)
@@ -136,7 +142,7 @@ class HandControlGUI(Node):
         # Show latest IK status/warning in the IK panel
         self.ik_status.set(msg.data)
 
-    def position_fingers_circle(self):
+    """def position_fingers_circle(self):
         try:
             radius = float(self.ent_radius.get())
             z_height = float(self.ent_z.get())
@@ -149,7 +155,7 @@ class HandControlGUI(Node):
                 finger_name = f"Finger {i+1}"
                 self.ik_pubs[finger_name].publish(msg)
         except ValueError:
-            print("Invalid radius or Z value")
+            print("Invalid radius or Z value")"""
 
     def publish_commands(self):
         msg = Float64MultiArray()
@@ -170,7 +176,7 @@ class HandControlGUI(Node):
 
     def close_fingers(self):
         for i, joint_name in enumerate(JOINT_ORDER):
-            min_limit, max_limit = JointLimits.JOINT_LIMITS[joint_name]
+            min_limit, max_limit = JointLimits.JOINT_LIMITS[joint_name] if not joint_name.endswith('joint_2') else (-0.61, 1.24)
             self.sliders[i].set(min_limit)
             self.joint_positions[i] = min_limit
         self.publish_commands()
@@ -189,13 +195,39 @@ class HandControlGUI(Node):
             self.joint_positions[i] = positions
         self.publish_commands()
 
+    def position_fingers_circle(self):
+        try:
+            # Load the waypoints file
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            waypoints_path = os.path.join(script_dir, 'src', 'waypoints.npy')
+
+            if not os.path.exists(waypoints_path):
+                print("waypoints.npy not found")
+                return
+
+            waypoints = np.load(waypoints_path)
+
+            # Be sure there are at least 3 points
+            for i in range(min(3, len(waypoints))):
+                msg = Point()
+                msg.x = float(waypoints[i][0])
+                msg.y = float(waypoints[i][1])
+                msg.z = float(waypoints[i][2])
+
+                finger_name = f"Finger {i+1}"
+                self.ik_pubs[finger_name].publish(msg)
+                print(f"Command sent for {finger_name}: {waypoints[i]}")
+
+        except Exception as e:
+            print(f"An error occured: {e}")
+
 class JointLimits(Exception):
     JOINT_LIMITS = {
-        'finger_1_joint_1': (-1.24, 1.24), 'finger_1_joint_2': (-0.61, 1.24),
+        'finger_1_joint_1': (-1.24, 1.24), 'finger_1_joint_2': (-1.24, 1.24),
         'finger_1_joint_3': (-1.24, 1.24), 'finger_1_joint_4': (-1.5, 1.5),
-        'finger_2_joint_1': (-1.24, 1.24), 'finger_2_joint_2': (-0.61, 1.24),
+        'finger_2_joint_1': (-1.24, 1.24), 'finger_2_joint_2': (-1.24, 1.24),
         'finger_2_joint_3': (-1.24, 1.24), 'finger_2_joint_4': (-1.5, 1.5),
-        'finger_3_joint_1': (-1.24, 1.24), 'finger_3_joint_2': (-0.61, 1.24),
+        'finger_3_joint_1': (-1.24, 1.24), 'finger_3_joint_2': (-1.24, 1.24),
         'finger_3_joint_3': (-1.24, 1.24), 'finger_3_joint_4': (-1.5, 1.5)
     }
     JOINT_POSITIONS_FOR_2_FINGER_PINCH = {

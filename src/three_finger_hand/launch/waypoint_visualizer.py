@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from visualization_msgs.msg import Marker, MarkerArray
@@ -8,9 +10,11 @@ class WaypointRvizVisualizer(Node):
     def __init__(self):
         super().__init__('waypoint_rviz_visualizer')
         self.publisher = self.create_publisher(MarkerArray, 'visualization_marker_array', 10)
-        # Her 2 saniyede bir markerları tazeler
+        # Refresh markers every 2 seconds
         self.timer = self.create_timer(2.0, self.publish_markers)
         self.get_logger().info("Waypoint Visualizer started.")
+        # Remember to add MarkerArray to RViz display
+        self.get_logger().info("Don't forget to add 'MarkerArray' visualization type in RViz if you don't see the waypoints.")
 
     def publish_markers(self):
         try:
@@ -51,14 +55,17 @@ class WaypointRvizVisualizer(Node):
         self.publisher.publish(marker_array)
 
 def main():
-    rclpy.init()
-    node = WaypointRvizVisualizer()
     try:
+        rclpy.init()
+        node = WaypointRvizVisualizer()
         rclpy.spin(node)
+        node.destroy_node()
+        rclpy.shutdown()
     except KeyboardInterrupt:
-        pass
-    node.destroy_node()
-    rclpy.shutdown()
+        print("Keyboard Interrupt detected. Shutting down...")
+    finally:
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

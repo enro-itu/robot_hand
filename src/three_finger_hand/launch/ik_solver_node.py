@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-print("Script starting...")
-
 import sys
 import os
 import subprocess
@@ -26,20 +24,31 @@ class IKSolverNode(Node):
         print(f"Xacro path: {xacro_path}")
         subprocess.run(f"xacro {xacro_path} > {urdf_temp_path}", shell=True, check=True)
 
-        self.chains = {
-            'finger_1': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_1"),
-            'finger_2': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_2"),
-            'finger_3': ikpy.chain.Chain.from_urdf_file(urdf_temp_path, base_elements=["palm"], name="finger_3")
-        }
-        
-        for name, chain in self.chains.items():
-            print(f"{name} chain loaded with {len(chain.links)} links.")
+        # Load IK chains for each finger with proper ending effectors
+        self.chains = {}
+        for finger_id in range(1, 4):
+            finger_name = f'finger_{finger_id}'
+            try:
+                chain = ikpy.chain.Chain.from_urdf_file(
+                    urdf_temp_path, 
+                    base_elements=["palm"],
+                    last_link_vector=[0, 0, 0.03],  # Offset from middle to distal tip
+                    name=finger_name
+                )
+                self.chains[finger_name] = chain
+                print(f"{finger_name} chain loaded with {len(chain.links)} links.")
+                # Log all joint names in the chain
+                for i, link in enumerate(chain.links):
+                    print(f"  Link {i}: {link.name}")
+            except Exception as e:
+                self.get_logger().error(f"Failed to load chain for {finger_name}: {e}")
+                raise
 
         self.publisher_ = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
         self.status_pub = self.create_publisher(String, '/ik_solver/status', 10)
         # Track latest commanded joint state so IK updates stay in sync with GUI actions like reset
         self.create_subscription(Float64MultiArray, '/forward_position_controller/commands', self.update_joint_state, 10)
-        
+
         self.create_subscription(Point, '/finger_1/goal_pose', partial(self.calculate_ik_callback, finger_id=1), 10)
         self.create_subscription(Point, '/finger_2/goal_pose', partial(self.calculate_ik_callback, finger_id=2), 10)
         self.create_subscription(Point, '/finger_3/goal_pose', partial(self.calculate_ik_callback, finger_id=3), 10)
@@ -57,7 +66,22 @@ class IKSolverNode(Node):
         print(f"[{finger_name}] Target Received: x={msg.x:.3f}, y={msg.y:.3f}, z={msg.z:.3f}")
 
         try:
-            target_pos = [msg.x, msg.y, msg.z]
+            x, y, z = msg.x, msg.y, msg.z
+            sqrt3 = np.sqrt(3)
+
+            if finger_id == 3:
+                tx = -x/2.0 - (sqrt3 * y)/2.0
+                ty = (sqrt3 * x)/2.0 - y/2.0
+                tz = z
+            elif finger_id == 2:
+                tx = -x/2.0 + (sqrt3 * y)/2.0
+                ty = -(sqrt3 * x)/2.0 - y/2.0
+                tz = z
+            else:
+                tx, ty, tz = x, y, z
+
+            target_pos = [tx, ty, tz]
+
             chain = self.chains[finger_name]
 
             ik_angles = chain.inverse_kinematics(target_pos)
@@ -67,12 +91,12 @@ class IKSolverNode(Node):
 
             error = np.linalg.norm(np.array(target_pos) - np.array(computed_pos))
 
-            if error > 0.01:
+            """if error > 0.01:
                 self.get_logger().warn(f"Target UNREACHABLE for {finger_name}! Error distance: {error:.4f}m")
                 warn_msg = String()
                 warn_msg.data = f"Unreachable target"
                 self.status_pub.publish(warn_msg)
-                return
+                return"""
 
             new_angles = ik_angles[1:5].tolist()
 
@@ -97,6 +121,7 @@ class IKSolverNode(Node):
 
 def main():
     try:
+        print("--- Script starting... ---")
         rclpy.init()
         node = IKSolverNode()
         rclpy.spin(node)
@@ -105,7 +130,7 @@ def main():
     finally:
         if rclpy.ok():
             rclpy.shutdown()
-        print("--- Script Closed ---")
+        print("--- Script closed ---")
 
 if __name__ == '__main__':
     main()
