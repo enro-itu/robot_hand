@@ -13,6 +13,8 @@ class WaypointRvizVisualizer(Node):
         # Refresh markers every 2 seconds
         self.timer = self.create_timer(2.0, self.publish_markers)
         self.get_logger().info("Waypoint Visualizer started.")
+        # Remember to add MarkerArray to RViz display
+        self.get_logger().info("Don't forget to add 'MarkerArray' visualization type in RViz if you don't see the waypoints.")
 
     def publish_markers(self):
         try:
