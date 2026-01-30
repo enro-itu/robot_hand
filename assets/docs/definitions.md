@@ -46,3 +46,9 @@ python3 ik_solver_node.py
 # In another terminal, launch manipulation demo node.
 python3 manipulation_demo_node.py
 ```
+
+Video from demo is below.
+
+<video width="320" height="240" controls>
+  <source src="../media/manipulation demo.mp4" type="video/mp4">
+</video>
