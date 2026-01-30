@@ -40,6 +40,7 @@ class ManipulationNode(Node):
         self.waypoints_path = os.path.join(self.script_dir, 'src', 'waypoints.npy')
 
         self.get_logger().info("Manipulation demo started")
+        self.get_logger().info("Don't forget to use 'man:=true' in simulation launch to have an object to manipulate.")
 
     def run_circle_generator(self): # To run circle_generator.py internally
         try:
