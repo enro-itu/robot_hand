@@ -31,3 +31,18 @@
 * **Logic:** Within the scope of this project, IK is only **position based**.
 * **Behavior:** IK node locates finger tips to selected 3 points around a created circle defined with a radius, axis, and center position.
 * **Constraint:**  The orientation of the distal links is not controlled; the goal is only to reach the coordinates of the end points on the circle.
+
+## Running manipulation demo
+
+To run the existing manipulation demo, required files are simulation.launch.py, ik_solver_node.py, and manipulation_demo_node.py. Follow the commands below to run.
+
+```bash
+# Launch simulation as mentioned in the report file, but with a 'man:=true' flag.
+ros2 launch three_finger_hand simulation.launch.py man:=true
+
+# In another terminal which is on the launch dir, launch ik solver node.
+python3 ik_solver_node.py
+
+# In another terminal, launch manipulation demo node.
+python3 manipulation_demo_node.py
+```
