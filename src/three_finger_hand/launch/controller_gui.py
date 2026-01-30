@@ -176,7 +176,7 @@ class HandControlGUI(Node):
 
     def close_fingers(self):
         for i, joint_name in enumerate(JOINT_ORDER):
-            min_limit, max_limit = JointLimits.JOINT_LIMITS[joint_name]
+            min_limit, max_limit = JointLimits.JOINT_LIMITS[joint_name] if not joint_name.endswith('joint_2') else (-0.61, 1.24)
             self.sliders[i].set(min_limit)
             self.joint_positions[i] = min_limit
         self.publish_commands()
